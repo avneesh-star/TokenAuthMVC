@@ -1,7 +1,12 @@
-﻿using System;
-using System.Web;
-using System.Web.Mvc;
-using TokenAuthMVC.Managers;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Text;
+using System.Threading.Tasks;
+using System.Web.Http.Controllers;
+using System.Web.Http;
+using BAL;
 
 namespace TokenAuthMVC.Attributes
 {
@@ -15,7 +20,8 @@ namespace TokenAuthMVC.Attributes
     {
         private const string _securityToken = "token";
 
-        public override void OnAuthorization(AuthorizationContext filterContext)
+        private const string _securityToken = "token";
+        public override void OnAuthorization(HttpActionContext filterContext)
         {
             if (Authorize(filterContext))
             {
@@ -25,19 +31,23 @@ namespace TokenAuthMVC.Attributes
             HandleUnauthorizedRequest(filterContext);
         }
 
-        protected override void HandleUnauthorizedRequest(AuthorizationContext filterContext)
+        protected override void HandleUnauthorizedRequest(HttpActionContext filterContext)
         {
             base.HandleUnauthorizedRequest(filterContext);
         }
 
-        private bool Authorize(AuthorizationContext actionContext)
+        private bool Authorize(HttpActionContext actionContext)
         {
             try
             {
-                HttpRequestBase request = actionContext.RequestContext.HttpContext.Request;
-                string token = request.Params[_securityToken];
-
-                return SecurityManager.IsTokenValid(token, CommonManager.GetIP(request), request.UserAgent);
+                var request = actionContext.Request;
+                string token = string.Empty;
+                var headers = request.Headers;
+                if (headers.Contains("Authorization"))
+                {
+                     token = headers.GetValues("Authorization").First();
+                }
+                return SecurityManager.IsTokenValid(token);
             }
             catch (Exception)
             {
